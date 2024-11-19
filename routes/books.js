@@ -4,18 +4,16 @@ import { body, validationResult } from 'express-validator';
 import Book from '../models/Book.js';
 import auth from '../middleware/auth.js';
 import admin from '../middleware/admin.js';
+import { fetchBookByISBN, searchBooks } from '../utils/openLibraryApi.js';
 
 const router = express.Router();
 
 // Validation middleware
 const validateBook = [
-  body('title').notEmpty().withMessage('Title is required'),
-  body('author').notEmpty().withMessage('Author is required'),
-  body('description').notEmpty().withMessage('Description is required'),
-  body('price').isNumeric().withMessage('Price must be a number'),
   body('isbn').notEmpty().withMessage('ISBN is required'),
-  body('category').notEmpty().withMessage('Category is required'),
+  body('price').isNumeric().withMessage('Price must be a number'),
   body('stockQuantity').isInt({ min: 0 }).withMessage('Stock quantity must be a non-negative integer'),
+  body('category').notEmpty().withMessage('Category is required'),
 ];
 
 // GET all books
@@ -47,7 +45,20 @@ router.post('/', [auth, admin, validateBook], async (req, res) => {
   }
 
   try {
-    const book = new Book(req.body);
+    const { isbn, price, stockQuantity, category } = req.body;
+    const bookData = await fetchBookByISBN(isbn);
+
+    if (!bookData) {
+      return res.status(404).json({ message: 'Book not found in Open Library' });
+    }
+
+    const book = new Book({
+      ...bookData,
+      price,
+      stockQuantity,
+      category,
+    });
+
     const savedBook = await book.save();
     res.status(201).json(savedBook);
   } catch (error) {
@@ -63,7 +74,24 @@ router.put('/:id', [auth, admin, validateBook], async (req, res) => {
   }
 
   try {
-    const updatedBook = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { isbn, price, stockQuantity, category } = req.body;
+    const bookData = await fetchBookByISBN(isbn);
+
+    if (!bookData) {
+      return res.status(404).json({ message: 'Book not found in Open Library' });
+    }
+
+    const updatedBook = await Book.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...bookData,
+        price,
+        stockQuantity,
+        category,
+      },
+      { new: true }
+    );
+
     if (!updatedBook) return res.status(404).json({ message: 'Book not found' });
     res.json(updatedBook);
   } catch (error) {
@@ -77,6 +105,16 @@ router.delete('/:id', [auth, admin], async (req, res) => {
     const deletedBook = await Book.findByIdAndDelete(req.params.id);
     if (!deletedBook) return res.status(404).json({ message: 'Book not found' });
     res.json({ message: 'Book deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Search books
+router.get('/search/:query', async (req, res) => {
+  try {
+    const results = await searchBooks(req.params.query);
+    res.json(results);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

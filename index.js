@@ -22,17 +22,31 @@ app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
-});
-
 // Root route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to PageTurner API' });
 });
 
-const PORT = process.env.PORT || 5000;
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ message: 'Validation Error', errors: err.errors });
+  }
+  
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  
+  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
