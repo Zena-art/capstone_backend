@@ -1,17 +1,34 @@
-import jwt from "jsonwebtoken";
+// backend/middleware/auth.js
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-module.exports = (req, res, next) => {
-  const token = req.header("x-auth-token");
-
-  if(!token) {
-    return res.status(401).json({ msg: "No token, authorization denied" });
-  }
-
+const auth = async (req, res, next) => {
   try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user;
+
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'Token is valid, but user not found' });
+    }
+
+    req.user = user;
     next();
-  } catch (err) {
-    res.status(401).json({ msg: "Token is not valid" });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired' });
+    }
+    res.status(500).json({ message: 'Server error during authentication' });
   }
-}
+};
+
+export default auth;
