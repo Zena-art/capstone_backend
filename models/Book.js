@@ -1,4 +1,3 @@
-// backend/models/Book.js
 import mongoose from 'mongoose';
 
 const BookSchema = new mongoose.Schema({
@@ -16,7 +15,7 @@ const BookSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Please enter book description'],
+    default: 'No description available',
     maxlength: [2000, 'Description cannot be more than 2000 characters']
   },
   price: {
@@ -28,16 +27,15 @@ const BookSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please enter ISBN'],
     unique: true,
-    trim: true,
-    match: [/^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/, 'Please enter a valid ISBN']
+    trim: true
   },
   coverImage: {
     type: String,
-    required: [true, 'Please provide cover image URL']
+    default: 'https://covers.openlibrary.org/b/id/-1-L.jpg'
   },
   category: {
     type: String,
-    required: [true, 'Please specify the book category'],
+    default: 'Other',
     enum: ['Fiction', 'Non-fiction', 'Science', 'Technology', 'History', 'Biography', 'Self-help', 'Children', 'Other']
   },
   stockQuantity: {
@@ -47,56 +45,15 @@ const BookSchema = new mongoose.Schema({
   },
   publisher: {
     type: String,
-    required: [true, 'Please enter publisher name'],
-    trim: true
+    default: 'Unknown'
   },
-  publicationDate: {
-    type: Date,
-    required: [true, 'Please enter publication date']
-  },
-  language: {
-    type: String,
-    required: [true, 'Please specify the book language'],
-    trim: true
-  },
-  pages: {
+  publicationYear: {
     type: Number,
-    required: [true, 'Please enter the number of pages'],
-    min: [1, 'Number of pages must be at least 1']
-  },
-  rating: {
-    type: Number,
-    default: 0,
-    min: [0, 'Rating must be between 0 and 5'],
-    max: [5, 'Rating must be between 0 and 5']
-  },
-  reviews: [{
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5
-    },
-    comment: {
-      type: String,
-      required: true
-    }
-  }],
-  featured: {
-    type: Boolean,
-    default: false
+    default: new Date().getFullYear()
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  strict: false  // This will allow additional fields to be stored without validation
 });
 
 export default mongoose.model('Book', BookSchema);

@@ -1,8 +1,9 @@
-// routes/auth.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
+import auth from '../middleware/auth.js';
+
 
 const router = express.Router();
 
@@ -10,7 +11,8 @@ const router = express.Router();
 router.post("/register", [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please include a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Please enter a password with 6 or more characters')
+  body('password').isLength({ min: 6 }).withMessage('Please enter a password with 6 or more characters'),
+  body('isAdmin').isBoolean().optional().withMessage('isAdmin must be a boolean')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -18,17 +20,28 @@ router.post("/register", [
   }
 
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, isAdmin } = req.body;
 
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: "User already exists" });
     }
 
-    user = new User({ name, email, password });
+    user = new User({
+      name,
+      email,
+      password,
+      isAdmin: isAdmin || false
+    });
+
     await user.save();
 
-    const payload = { user: { id: user.id } };
+    const payload = {
+      user: {
+        id: user.id,
+        isAdmin: user.isAdmin
+      }
+    };
 
     jwt.sign(
       payload,
@@ -42,7 +55,8 @@ router.post("/register", [
           user: {
             id: user.id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            isAdmin: user.isAdmin
           }
         });
       }
@@ -76,7 +90,12 @@ router.post('/login', [
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
-    const payload = { user: { id: user.id } };
+    const payload = {
+      user: {
+        id: user.id,
+        isAdmin: user.isAdmin
+      }
+    };
 
     jwt.sign(
       payload,
@@ -90,7 +109,8 @@ router.post('/login', [
           user: {
             id: user.id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            isAdmin: user.isAdmin
           }
         });
       }
@@ -101,31 +121,17 @@ router.post('/login', [
   }
 });
 
-// Password reset route (for testing purposes)
-router.post('/reset-password', [
-  body('email').isEmail().withMessage('Please include a valid email'),
-  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { email, newPassword } = req.body;
-
+// Get current user
+router.get('/me', auth, async (req, res) => {
   try {
-    let user = await User.findOne({ email });
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
-      return res.status(400).json({ msg: 'User not found' });
+      return res.status(404).json({ msg: 'User not found' });
     }
-
-    user.password = newPassword;
-    await user.save();
-
-    res.json({ msg: 'Password reset successful' });
+    res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send('Server Error');
   }
 });
 

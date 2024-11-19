@@ -10,30 +10,43 @@ export async function fetchBookByISBN(isbn) {
     }
     const data = await response.json();
     
-    // Fetch additional author information
+    // Extract author name from the title if it contains it
     let authorName = 'Unknown';
     if (data.authors && data.authors[0] && data.authors[0].key) {
-      const authorResponse = await fetch(`${BASE_URL}${data.authors[0].key}.json`);
-      if (authorResponse.ok) {
-        const authorData = await authorResponse.json();
-        authorName = authorData.name || 'Unknown';
+      try {
+        const authorResponse = await fetch(`${BASE_URL}${data.authors[0].key}.json`);
+        if (authorResponse.ok) {
+          const authorData = await authorResponse.json();
+          authorName = authorData.name;
+        }
+      } catch (error) {
+        console.error('Error fetching author data:', error);
       }
     }
+
+    // Handle cover image
+    const coverImage = data.covers 
+      ? `https://covers.openlibrary.org/b/id/${data.covers[0]}-M.jpg`
+      : 'https://covers.openlibrary.org/b/id/-1-M.jpg';
+
+    // Extract publication year
+    const publicationYear = data.publish_date 
+      ? parseInt(data.publish_date.match(/\d{4}/)?.[0]) 
+      : new Date().getFullYear();
 
     return {
       title: data.title,
       author: authorName,
       description: data.description?.value || data.description || 'No description available',
       isbn: isbn,
-      coverImage: data.cover ? `https://covers.openlibrary.org/b/id/${data.cover.large || data.cover.medium || data.cover.small}-L.jpg` : null,
+      coverImage: coverImage,
+      category: 'Other', // Default category
       publisher: data.publishers?.[0] || 'Unknown',
-      publicationDate: data.publish_date,
-      language: data.languages?.[0]?.key.split('/').pop() || 'Unknown',
-      pages: data.number_of_pages || 0,
+      publicationYear: publicationYear
     };
   } catch (error) {
     console.error('Error fetching book data:', error);
-    return null;
+    throw error;
   }
 }
 
@@ -49,8 +62,10 @@ export async function searchBooks(query, limit = 10) {
       title: book.title,
       author: book.author_name?.[0] || 'Unknown',
       isbn: book.isbn?.[0] || 'Unknown',
-      coverImage: book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : null,
-      publishYear: book.first_publish_year,
+      coverImage: book.cover_i 
+        ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
+        : 'https://covers.openlibrary.org/b/id/-1-M.jpg',
+      publicationYear: book.first_publish_year
     }));
   } catch (error) {
     console.error('Error searching books:', error);
