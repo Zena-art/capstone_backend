@@ -3,28 +3,34 @@ import jwt from 'jsonwebtoken';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
 import auth from '../middleware/auth.js';
-
+import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
-// Register route
-router.post("/register", [
+
+// Registration route
+router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Please include a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Please enter a password with 6 or more characters'),
-  body('isAdmin').isBoolean().optional().withMessage('isAdmin must be a boolean')
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('isAdmin').optional().isBoolean().withMessage('isAdmin must be a boolean value'),
 ], async (req, res) => {
+  console.log('Received registration request:', req.body);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
-  try {
-    const { name, email, password, isAdmin } = req.body;
+  const { name, email, password, isAdmin } = req.body;
 
+  try {
     let user = await User.findOne({ email });
+
     if (user) {
-      return res.status(400).json({ msg: "User already exists" });
+      console.log('User already exists:', email);
+      return res.status(400).json({ msg: 'User already exists' });
     }
 
     user = new User({
@@ -33,6 +39,9 @@ router.post("/register", [
       password,
       isAdmin: isAdmin || false
     });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
 
     await user.save();
 
@@ -46,31 +55,23 @@ router.post("/register", [
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '5h' },
       (err, token) => {
         if (err) throw err;
-        res.status(201).json({
-          msg: "User created successfully",
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            isAdmin: user.isAdmin
-          }
-        });
+        console.log('User registered successfully:', email);
+        res.json({ token });
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ msg: "Server error" });
+    console.error('Error in registration:', err);
+    res.status(500).json({ msg: 'Server error', error: err.message });
   }
 });
 
 // Login route
 router.post('/login', [
   body('email').isEmail().withMessage('Please include a valid email'),
-  body('password').exists().withMessage('Password is required')
+  body('password').exists().withMessage('Password is required'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -81,11 +82,13 @@ router.post('/login', [
 
   try {
     let user = await User.findOne({ email });
+
     if (!user) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
 
     const isMatch = await user.comparePassword(password);
+
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
     }
@@ -100,24 +103,15 @@ router.post('/login', [
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '5h' },
       (err, token) => {
         if (err) throw err;
-        res.json({
-          msg: 'Login successful',
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            isAdmin: user.isAdmin
-          }
-        });
+        res.json({ token });
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    console.error('Error in login:', err);
+    res.status(500).json({ msg: 'Server error', error: err.message });
   }
 });
 

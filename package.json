@@ -1,5 +1,25 @@
 {
+  "name": "pageturner-backend",
+  "version": "1.0.0",
+  "description": "Backend for PageTurner bookstore application",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.21.1",
+    "express-validator": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^6.0.12",
+    "node-fetch": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
   }
 }
