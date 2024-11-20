@@ -5,6 +5,14 @@
 
 PageTurner Backend is the server-side component of the PageTurner online bookstore application. It provides a RESTful API for managing books, user authentication, and order processing.
 
+
+### Built With
+
+* [![Node.js][Node.js]][Node-url]
+* [![Express][Express.js]][Express-url]
+* [![MongoDB][MongoDB]][MongoDB-url]
+* [![Mongoose][Mongoose.js]][Mongoose-url]
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -74,9 +82,9 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Your Name - [your-email@example.com](mailto:your-email@example.com)
+Zena Nazim - [zena.nazim@gmail.com](mailto:your-email@example.com)
 
-Project Link: [https://github.com/your_username/pageturner-backend](https://github.com/your_username/pageturner-backend)
+Project Link: https://github.com/zena-art/pageturner-backend
 
 ## Acknowledgments
 
