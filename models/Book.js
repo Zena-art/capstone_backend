@@ -5,13 +5,15 @@ const BookSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please enter book title'],
     trim: true,
-    maxlength: [200, 'Book title cannot be more than 200 characters']
+    maxlength: [200, 'Book title cannot be more than 200 characters'],
+    index: true // Add index for faster queries
   },
   author: {
     type: String,
     required: [true, 'Please enter author name'],
     trim: true,
-    maxlength: [100, 'Author name cannot be more than 100 characters']
+    maxlength: [100, 'Author name cannot be more than 100 characters'],
+    index: true // Add index for faster queries
   },
   description: {
     type: String,
@@ -27,7 +29,8 @@ const BookSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please enter ISBN'],
     unique: true,
-    trim: true
+    trim: true,
+    index: true // Add index for faster queries and ensure uniqueness
   },
   coverImage: {
     type: String,
@@ -36,7 +39,8 @@ const BookSchema = new mongoose.Schema({
   category: {
     type: String,
     default: 'Other',
-    enum: ['Fiction', 'Non-fiction', 'Science', 'Technology', 'History', 'Biography', 'Self-help', 'Children', 'Other']
+    enum: ['Fiction', 'Non-fiction', 'Science', 'Technology', 'History', 'Biography', 'Self-help', 'Children', 'Other'],
+    index: true // Add index for faster queries
   },
   stockQuantity: {
     type: Number,
@@ -55,5 +59,11 @@ const BookSchema = new mongoose.Schema({
   timestamps: true,
   strict: false  // This will allow additional fields to be stored without validation
 });
+
+// Compound index for title and author
+BookSchema.index({ title: 1, author: 1 });
+
+// Compound index for category and publicationYear
+BookSchema.index({ category: 1, publicationYear: -1 });
 
 export default mongoose.model('Book', BookSchema);
