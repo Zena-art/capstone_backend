@@ -64,6 +64,10 @@ router.post('/register', [
     );
   } catch (err) {
     console.error('Error in registration:', err);
+    if (err.code === 11000) {
+      // This error code indicates a duplicate key error
+      return res.status(400).json({ msg: 'User already exists' });
+    }
     res.status(500).json({ msg: 'Server error', error: err.message });
   }
 });
