@@ -76,6 +76,12 @@ The server will start on `http://localhost:5000` by default.
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## Deployment Status
+
+### Backend (Render)
+- Deployed URL: https://capstone-backend-34va.onrender.com
+- GitHub Repository: https://github.com/Zena-art/capstone_backend
+
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
@@ -84,7 +90,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Zena Nazim - [zena.nazim@gmail.com](mailto:your-email@example.com)
 
-Project Link: https://github.com/zena-art/pageturner-backend
+
 
 ## Acknowledgments
 
